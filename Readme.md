@@ -1,6 +1,6 @@
 # Daydream
 
-A chrome extension to record your actions into a [Nightmare](https://github.com/segmentio/nightmare) or [Puppeteer](https://github.com/GoogleChrome/puppeteer) script.
+A chrome extension to record your actions into a [Puppeteer](https://github.com/GoogleChrome/puppeteer) script.
 
 ## Example
 
