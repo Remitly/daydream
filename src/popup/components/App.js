@@ -175,6 +175,11 @@ const puppeteer = require("puppeteer");
             return `await page.waitForSelector('${selector}'); await page.focus('${selector}');`;
           case "blur":
             return `await page.focus('body');`;
+          case "selection":
+            return `await page.waitForSelector('${selector}');
+            if ((await page.$eval('${selector}', node => node.textContent)) !== ${JSON.stringify(value)}) {
+              throw new Error("${selector}'s content doesn't match expected");
+            }`;
           default:
             throw new Error(`unsupported action ${action}`);
         }

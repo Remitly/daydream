@@ -4,9 +4,6 @@ export default class Recorder {
     this.network = [];
     this.tab = null;
     this.lastUrl = null;
-    this.networkPromise = new Promise(
-      resolve => (this.resolveNetworkPromise = resolve),
-    );
   }
 
   async start() {
@@ -23,8 +20,6 @@ export default class Recorder {
         resolve(tabs[0]);
       });
     });
-
-    chrome.runtime.onMessageExternal.addListener(this.handleExternalMessage);
   }
 
   async stop() {
@@ -36,8 +31,6 @@ export default class Recorder {
       this.handleCompletedNavigation,
     );
     chrome.runtime.onMessage.removeListener(this.handleMessage);
-    this.network = await this.networkPromise;
-    chrome.runtime.onMessageExternal.removeListener(this.handleExternalMessage);
   }
 
   handleCompletedNavigation = ({ url, frameId }) => {};
@@ -53,16 +46,6 @@ export default class Recorder {
         runAt: "document_start",
       });
       chrome.browserAction.setIcon({ path: "./images/icon-recording.png" });
-    }
-  };
-
-  handleExternalMessage = (request, sender, sendResponse) => {
-    console.log("external message", request, sender);
-    const { messageType, data } = request;
-    switch (messageType) {
-      case "saveHar":
-        this.resolveNetworkPromise(data);
-        break;
     }
   };
 

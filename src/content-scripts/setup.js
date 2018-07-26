@@ -1,20 +1,4 @@
-import { Polly } from "@pollyjs/core";
-import FetchAdapter from "@pollyjs/adapter-fetch";
-import { DaydreamPollyPersister } from "./custom-persister";
-
 console.log("hello from daydream setup script");
-
-const polly = new Polly("Daydream", {
-  adapters: [FetchAdapter],
-  persister: DaydreamPollyPersister,
-  // logging: true,
-});
-
-polly.record();
-
-window.__daydream_stop_recording = function stop() {
-  polly.stop();
-};
 
 // hack!
 const overriddenStop = Event.prototype.stopPropagation;

@@ -21,20 +21,6 @@ function record(data) {
   });
 }
 
-function stopPolly() {
-  const actualCode = `window.__daydream_stop_recording();`;
-  const scriptTag = document.createElement("script");
-  scriptTag.textContent = actualCode;
-  (document.head || document.documentElement).appendChild(scriptTag);
-  scriptTag.remove();
-}
-
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === "stop") {
-    stopPolly();
-  }
-});
-
 record({
   action: "viewport",
   config: {
@@ -90,6 +76,39 @@ function handleBlur(ev) {
   });
 }
 
+let selectionTimeout;
+function handleSelection(ev) {
+  clearTimeout(selectionTimeout);
+  selectionTimeout = setTimeout(() => {
+    const selection = getSelection()
+    if (selection.toString()) {
+      for (let i = 0; i < selection.rangeCount; i++) {
+        const range = selection.getRangeAt(i);
+        let container = range.commonAncestorContainer;
+        if (!container.tagName) {
+          container = container.parentElement;
+        }
+        record({
+          action: "selection",
+          selector: selectorGenerator.getSelector(container),
+          value: container.textContent,
+        });
+        const originalColor = container.style.backgroundColor;
+        const originalTransition = container.style.transition;
+        container.style.backgroundColor = "red";
+        setTimeout(() => {
+          container.style.WebkitTransition = "background-color 2s";
+          container.style.backgroundColor = originalColor;
+          setTimeout(() => {
+            container.style.transition = originalTransition;
+          }, 1000);
+        }, 10);
+      }
+      selection.removeAllRanges();
+    }
+  }, 500);
+}
+
 // hack!
 const overriddenStop = Event.prototype.stopPropagation;
 Event.prototype.stopPropagation = function() {
@@ -111,5 +130,6 @@ document.addEventListener("click", handleClick);
 document.addEventListener("focus", handleFocus);
 document.addEventListener("blur", handleBlur);
 document.addEventListener("change", handleChange);
+document.addEventListener("selectionchange", handleSelection);
 
 console.log("content scripts started");
