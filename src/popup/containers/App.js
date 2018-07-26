@@ -1,41 +1,38 @@
-import React, { Component } from 'react'
-import App from '../components/App'
+import React, { Component } from "react";
+import App from "../components/App";
 
 export default class AppContainer extends Component {
-  constructor (props) {
-    super(props)
+  constructor(props) {
+    super(props);
 
     this.state = {
-      selectedTab: 'Nightmare',
-      recording: []
-    }
+      recording: [],
+      network: [],
+    };
 
-    this.onSelectTab = this.onSelectTab.bind(this)
-    this.onRestart = this.onRestart.bind(this)
+    this.onRestart = this.onRestart.bind(this);
   }
 
-  render () {
+  render() {
     return React.createElement(App, {
       ...this.props,
       ...this.state,
-      onSelectTab: this.onSelectTab,
-      onRestart: this.onRestart
-    })
+      onRestart: this.onRestart,
+    });
   }
 
-  componentDidMount () {
-    chrome.storage.sync.get('recording', ({ recording }) => {
-      this.setState({ recording })
-    })
+  componentDidMount() {
+    chrome.storage.local.get("recording", ({ recording }) => {
+      this.setState({ recording });
+    });
+    chrome.storage.local.get("network", ({ network }) => {
+      this.setState({ network });
+    });
   }
 
-  onSelectTab (selectedTab) {
-    this.setState({ selectedTab })
-  }
-
-  onRestart () {
-    chrome.browserAction.setBadgeText({ text: '' })
-    chrome.runtime.reload()
-    window.close()
+  onRestart() {
+    chrome.browserAction.setBadgeText({ text: "" });
+    chrome.runtime.reload();
+    window.close();
   }
 }

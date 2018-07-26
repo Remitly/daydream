@@ -5,17 +5,29 @@
   "description": "A chrome extension to record your actions into a puppeteer script.",
   "permissions": [
     "storage",
+    "downloads",
     "webNavigation",
     "tabs",
-    "*://*/"
+    "unlimitedStorage",
+    "*://*/",
+    "*://localhost/*",
+    "*://localhost:*/*"
   ],
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; https://*.segment.com https://*.mxpnl.com; object-src 'self'",
+  "externally_connectable": {
+    "matches": [
+      "*://*.remitly.com/*",
+      "*://localhost/*",
+      "*://localhost:*/*"
+    ]
+  },
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "browser_action": {
-    "default_icon": "images/icon-black.png",
+    "default_icon": "images/icon.png",
     "default_title": "Daydream"
   },
   "background": {
     "scripts": [ "background.js" ],
     "persistent": false
-  }
+  },
+  "web_accessible_resources": ["setup-script.js"]
 }

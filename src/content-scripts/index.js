@@ -1,46 +1,115 @@
-import Selector from 'css-selector-generator'
+import SelectorGenerator from "css-selector-generator";
 
-const selector = new Selector()
+console.log("hello from daydream content script");
 
-class EventRecorder {
-  start () {
-    const typeableElements = document.querySelectorAll('input, textarea')
-    const clickableElements = document.querySelectorAll('a, button')
+const scriptTag = document.createElement("script");
+// TODO: add "script.js" to web_accessible_resources in manifest.json
+scriptTag.src = chrome.extension.getURL("setup-script.js");
+scriptTag.onload = function() {
+  this.remove();
+};
+(document.head || document.documentElement).appendChild(scriptTag);
 
-    for (let i = 0; i < typeableElements.length; i++) {
-      typeableElements[i].addEventListener('keydown', this.handleKeydown)
-    }
+const selectorGenerator = new SelectorGenerator();
 
-    for (let i = 0; i < clickableElements.length; i++) {
-      clickableElements[i].addEventListener('click', this.handleClick)
-    }
-  }
+selectorGenerator.setOptions({ selectors: ["id", "class", "tag", "nthchild"] });
 
-  handleKeydown (e) {
-    if (e.keyCode !== 9) {
-      return
-    }
-    sendMessage(e)
-  }
-
-  handleClick (e) {
-    if (e.target.href) {
-      chrome.runtime.sendMessage({
-        action: 'url',
-        value: e.target.href
-      })
-    }
-    sendMessage(e)
-  }
-}
-
-function sendMessage (e) {
+function record(data) {
   chrome.runtime.sendMessage({
-    selector: selector.getSelector(e.target),
-    value: e.target.value,
-    action: e.type
-  })
+    messageType: "userInteraction",
+    data,
+  });
 }
 
-const eventRecorder = new EventRecorder()
-eventRecorder.start()
+function stopPolly() {
+  const actualCode = `window.__daydream_stop_recording();`;
+  const scriptTag = document.createElement("script");
+  scriptTag.textContent = actualCode;
+  (document.head || document.documentElement).appendChild(scriptTag);
+  scriptTag.remove();
+}
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === "stop") {
+    stopPolly();
+  }
+});
+
+record({
+  action: "viewport",
+  config: {
+    width: document.documentElement.clientWidth,
+    height: document.documentElement.clientHeight,
+    deviceScaleFactor: window.screen.devicePixelRatio,
+  },
+});
+
+function handleKey(ev) {
+  record({
+    selector: selectorGenerator.getSelector(ev.target),
+    value: ev.code,
+    action: ev.type,
+  });
+}
+
+function handleClick(ev) {
+  if (ev.target.href) {
+    record({
+      action: "url",
+      value: ev.target.href,
+    });
+  }
+  record({
+    selector: selectorGenerator.getSelector(ev.target),
+    value: ev.target.value,
+    action: ev.type,
+  });
+}
+
+function handleChange(ev) {
+  if (ev.target.tagName === "SELECT") {
+    record({
+      selector: selectorGenerator.getSelector(ev.target),
+      value: ev.target.value,
+      action: ev.type,
+    });
+  }
+}
+
+function handleFocus(ev) {
+  record({
+    selector: selectorGenerator.getSelector(ev.target),
+    action: ev.type,
+  });
+}
+
+function handleBlur(ev) {
+  record({
+    selector: selectorGenerator.getSelector(ev.target),
+    action: ev.type,
+  });
+}
+
+// hack!
+const overriddenStop = Event.prototype.stopPropagation;
+Event.prototype.stopPropagation = function() {
+  console.log("stopPropagation called!", this);
+  this._propagationStopped = true;
+  overriddenStop.apply(this, arguments);
+};
+const overriddenStopImmediate = Event.prototype.stopImmediatePropagation;
+Event.prototype.stopImmediatePropagation = function() {
+  console.log("stopImmediatePropagation called!", this);
+  this._propagationStopped = true;
+  overriddenStopImmediate.apply(this, arguments);
+};
+
+document.addEventListener("keydown", handleKey);
+// document.addEventListener('keypress', handleKey); // don't want to duplicate this with keydown
+document.addEventListener("keyup", handleKey);
+document.addEventListener("click", handleClick);
+document.addEventListener("focus", handleFocus);
+document.addEventListener("blur", handleBlur);
+document.addEventListener("change", handleChange);
+
+console.log("content scripts started");

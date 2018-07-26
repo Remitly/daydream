@@ -1,39 +1,80 @@
-
 export default class Recorder {
-  constructor () {
-    this.recording = []
-    this.lastUrl
+  constructor() {
+    this.recording = [];
+    this.network = [];
+    this.tab = null;
+    this.lastUrl = null;
+    this.networkPromise = new Promise(
+      resolve => (this.resolveNetworkPromise = resolve),
+    );
   }
 
-  start () {
-    chrome.webNavigation.onCompleted.addListener(this.handleCompletedNavigation.bind(this))
-    chrome.webNavigation.onCommitted.addListener(this.handleCommittedNavigation.bind(this))
-    chrome.runtime.onMessage.addListener(this.handleMessage.bind(this))
+  async start() {
+    chrome.webNavigation.onCompleted.addListener(
+      this.handleCompletedNavigation,
+    );
+    chrome.webNavigation.onCommitted.addListener(
+      this.handleCommittedNavigation,
+    );
+    chrome.runtime.onMessage.addListener(this.handleMessage);
+
+    this.tab = await new Promise(resolve => {
+      chrome.tabs.query({ currentWindow: true, active: true }, tabs => {
+        resolve(tabs[0]);
+      });
+    });
+
+    chrome.runtime.onMessageExternal.addListener(this.handleExternalMessage);
   }
 
-  stop () {
-    chrome.webNavigation.onCommitted.removeListener()
-    chrome.runtime.onMessage.removeListener()
-    chrome.tabs.onUpdated.removeListener()
+  async stop() {
+    chrome.tabs.sendMessage(this.tab.id, { action: "stop" });
+    chrome.webNavigation.onCommitted.removeListener(
+      this.handleCommittedNavigation,
+    );
+    chrome.webNavigation.onCompleted.removeListener(
+      this.handleCompletedNavigation,
+    );
+    chrome.runtime.onMessage.removeListener(this.handleMessage);
+    this.network = await this.networkPromise;
+    chrome.runtime.onMessageExternal.removeListener(this.handleExternalMessage);
   }
 
-  handleCompletedNavigation ({ url, frameId }) {
-    if (frameId === 0) {
-      chrome.tabs.executeScript({ file: 'content-script.js' })
+  handleCompletedNavigation = ({ url, frameId }) => {};
+
+  handleCommittedNavigation = ({ transitionQualifiers, url, tabId }) => {
+    this.handleMessage({
+      messageType: "userInteraction",
+      data: { action: "goto", url },
+    });
+    if (tabId === this.tab.id) {
+      chrome.tabs.executeScript(this.tab.id, {
+        file: "content-script.js",
+        runAt: "document_start",
+      });
+      chrome.browserAction.setIcon({ path: "./images/icon-recording.png" });
     }
-  }
+  };
 
-  handleCommittedNavigation ({ transitionQualifiers, url }) {
-    if (transitionQualifiers.includes('from_address_bar') || url === this.lastUrl) {
-      this.handleMessage({ action: 'goto', url })
+  handleExternalMessage = (request, sender, sendResponse) => {
+    console.log("external message", request, sender);
+    const { messageType, data } = request;
+    switch (messageType) {
+      case "saveHar":
+        this.resolveNetworkPromise(data);
+        break;
     }
-  }
+  };
 
-  handleMessage (message) {
-    if (message.action === 'url') {
-      this.lastUrl = message.value
-    } else {
-      this.recording.push(message)
+  handleMessage = ({ messageType, data }) => {
+    switch (messageType) {
+      case "userInteraction":
+        if (data.action === "url") {
+          this.lastUrl = data.value;
+        } else {
+          this.recording.push(data);
+        }
+        break;
     }
-  }
+  };
 }

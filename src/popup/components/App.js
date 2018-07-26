@@ -1,113 +1,195 @@
-import React from 'react'
-import { Tablist, Tab } from 'evergreen-ui'
-import SyntaxHighlighter, { registerLanguage } from 'react-syntax-highlighter/dist/light'
-import js from 'react-syntax-highlighter/dist/languages/javascript'
-import syntaxStyle from './syntaxStyle'
-import styles from './App.css'
+import prettier from "prettier/standalone";
+import prettierBabylon from "prettier/parser-babylon";
+import React from "react";
+import SyntaxHighlighter, {
+  registerLanguage,
+} from "react-syntax-highlighter/dist/light";
+import highlightStyles from "react-syntax-highlighter/dist/styles/github";
+import js from "react-syntax-highlighter/dist/languages/javascript";
+import cssStyles from "./App.css";
 
-registerLanguage('javascript', js)
+registerLanguage("javascript", js);
 
-const tabs = ['Nightmare', 'Puppeteer']
+export default class App extends React.Component {
+  state = {
+    slowMo: 0,
+    headless: false,
+    autoClose: false,
+  };
 
-const App = ({ onSelectTab, selectedTab, onRestart, recording }) => {
-  let script = ''
-  if (selectedTab === 'Nightmare') {
-    script = getNightmare(recording)
-  } else if (selectedTab === 'Puppeteer') {
-    script = getPuppeteer(recording)
+  render() {
+    const {
+      onSelectTab,
+      selectedTab,
+      onRestart,
+      recording,
+      network,
+    } = this.props;
+
+    const script = getPuppeteer(recording, {
+      slowMo: this.state.slowMo,
+      headless: this.state.headless,
+      autoClose: this.state.autoClose,
+    });
+
+    const har = JSON.stringify(network.har, null, "  ");
+
+    function copyScript() {
+      void navigator.clipboard.writeText(script);
+    }
+
+    function copyHar() {
+      void navigator.clipboard.writeText(har);
+    }
+
+    function download() {
+      let filenamePrefix = `daydream_${(new Date()).toISOString().slice(0, -8).replace("T", "_").replace(":", "-")}`;
+      const scriptBlob = new Blob([script], {
+        type: "application/javascript",
+      });
+      const scriptUrl = URL.createObjectURL(scriptBlob);
+      chrome.downloads.download({
+        url: scriptUrl,
+        filename: `${filenamePrefix}/index.js`,
+      });
+      if (har) {
+        const harBlob = new Blob([har], {
+          type: "application/json",
+        });
+        const harUrl = URL.createObjectURL(harBlob);
+        chrome.downloads.download({
+          url: harUrl,
+          filename: `${filenamePrefix}/network_log.har`,
+        });
+      }
+    }
+
+    return (
+      <div>
+        <p>
+          <label>
+            Headless{" "}
+            <input
+              type="checkbox"
+              name="headless"
+              checked={this.state.headless}
+              onChange={this.handleHeadlessChange}
+            />
+          </label>
+          <br />
+          <label>
+            Close after running{" "}
+            <input
+              type="checkbox"
+              name="close-after"
+              checked={this.state.autoClose}
+              onChange={this.handleAutocloseChange}
+            />
+          </label>
+          <br />
+          <label>
+            Slow down speed{" "}
+            <input
+              type="range"
+              name="slowdown"
+              value={this.state.slowMo}
+              min={0}
+              max={1000}
+              step={25}
+              onChange={this.handleSlowdownChange}
+            />
+          </label>{" "}
+          {this.state.slowMo}ms
+        </p>
+
+        <p>
+          <button onClick={download}>Download</button>
+          <button onClick={onRestart}>Reset</button>
+        </p>
+
+        <SyntaxHighlighter language="javascript" style={highlightStyles}>
+          {script}
+        </SyntaxHighlighter>
+        <button onClick={copyScript}>Copy</button>
+
+        {har && (
+          <div>
+            <SyntaxHighlighter language="javascript" style={highlightStyles}>
+              {har}
+            </SyntaxHighlighter>
+            <button onClick={copyHar}>Copy</button>
+          </div>
+        )}
+      </div>
+    );
   }
 
-  return (
-    <div>
-      <Tablist marginX={-4} marginBottom={16} textAlign='center'>
-        {tabs.map((tab, index) => (
-          <Tab
-            key={tab}
-            id={tab}
-            isSelected={tab === selectedTab}
-            onSelect={() => onSelectTab(tab)}
-            aria-controls={`panel-${tab}`}
-          >
-            {tab}
-          </Tab>
-        ))}
-      </Tablist>
+  handleHeadlessChange = ev => {
+    this.setState({ headless: ev.target.checked });
+  };
 
-      <SyntaxHighlighter language='javascript' style={syntaxStyle}>
-        {script}
-      </SyntaxHighlighter>
+  handleSlowdownChange = ev => {
+    this.setState({ slowMo: parseInt(ev.target.value) });
+  };
 
-      <button className={styles.button} onClick={onRestart}>Restart</button>
-    </div>
-  )
+  handleAutocloseChange = ev => {
+    this.setState({ autoClose: ev.target.checked });
+  };
 }
 
-function getNightmare (recording) {
-  return `const Nightmare = require('nightmare')
-const nightmare = Nightmare({ show: true })
-
-nightmare
-${recording.reduce((records, record, i) => {
-  const { action, url, selector, value } = record
-  let result = records
-  if (i !== records.length) result += '\n'
-
-  switch (action) {
-    case 'keydown':
-      result += `.type('${selector}', '${value}')`
-      break
-    case 'click':
-      result += `.click('${selector}')`
-      break
-    case 'goto':
-      result += `.goto('${url}')`
-      break
-    case 'reload':
-      result += `.refresh()`
-      break
-  }
-
-  return result
-}, '')}
-.end()
-.then(function (result) {
-  console.log(result)
-})
-.catch(function (error) {
-  console.error('Error:', error);
-});`
-}
-
-function getPuppeteer (recording) {
-  return `const puppeteer = require('puppeteer')
+function getPuppeteer(recording, options) {
+  const { slowMo, headless, autoClose } = options;
+  return prettier.format(
+    `
+const puppeteer = require("puppeteer");
 
 (async () => {
-  const browser = await puppeteer.launch()
-  const page = await browser.newPage()
-${recording.reduce((records, record, i) => {
-  const { action, url, selector, value } = record
-  let result = records
-  if (i !== records.length) result += '\n'
-
-  switch (action) {
-    case 'keydown':
-      result += `  await page.type('${selector}', '${value}')`
-      break
-    case 'click':
-      result += `  await page.click('${selector}')`
-      break
-    case 'goto':
-      result += `  await page.goto('${url}')`
-      break
-    case 'reload':
-      result += `  await page.reload()`
-      break
+  try {
+    const browser = await puppeteer.launch(${JSON.stringify({
+      slowMo: slowMo || undefined,
+      headless: headless && undefined,
+    })})
+    const page = await browser.newPage()
+        
+    ${recording
+      .map(record => {
+        const { action, url, selector, value } = record;
+        switch (action) {
+          case "goto":
+            return `await page.goto('${url}');`;
+          case "viewport":
+            return `await page.setViewport(${JSON.stringify(record.config)});`;
+          case "keydown":
+            return `await page.keyboard.down('${value}');`;
+          case "keyup":
+            return `await page.keyboard.up('${value}');`;
+          case "keypress":
+            return `await page.keyboard.press('${value}');`;
+          case "click":
+            return `await page.waitForSelector('${selector}'); await page.click('${selector}');`;
+          case "change":
+          return `await page.waitForSelector('${selector}'); await page.select('${selector}', '${value}');`;
+          case "reload":
+            return `await page.reload();`;
+          case "focus":
+            return `await page.waitForSelector('${selector}'); await page.focus('${selector}');`;
+          case "blur":
+            return `await page.focus('body');`;
+          default:
+            throw new Error(`unsupported action ${action}`);
+        }
+      })
+      .join("\n")}
+    ${autoClose ? `await browser.close();` : ""}
+  } catch (err) {
+    console.log("Test failed");
+    console.error(err);
   }
-
-  return result
-}, '')}
-  await browser.close()
-})()`
+})()`,
+    {
+      parser: "babylon",
+      plugins: [prettierBabylon],
+      trailingComma: "all",
+    },
+  );
 }
-
-export default App

@@ -1,25 +1,26 @@
-
-import Recorder from './recorder'
+import Recorder from "./recorder";
 
 export default class Daydream {
-  constructor () {
-    this.isRunning = false
-    this.recorder = new Recorder()
+  constructor() {
+    this.isRunning = false;
+    this.recorder = new Recorder();
   }
 
-  boot () {
-    chrome.browserAction.onClicked.addListener(() => {
+  boot() {
+    console.log("hello from daydream");
+    chrome.browserAction.onClicked.addListener(async () => {
       if (this.isRunning) {
-        this.recorder.stop()
-        chrome.storage.sync.set({ recording: this.recorder.recording })
-        chrome.browserAction.setIcon({ path: './images/icon-black.png' })
-        chrome.browserAction.setPopup({ popup: 'index.html' })
-        chrome.browserAction.setBadgeText({ text: '1' })
+        await this.recorder.stop();
+        chrome.storage.local.set({ recording: this.recorder.recording });
+        chrome.storage.local.set({ network: this.recorder.network });
+        chrome.browserAction.setIcon({ path: "./images/icon.png" });
+        chrome.browserAction.setPopup({ popup: "index.html" });
+        chrome.browserAction.setBadgeText({ text: "1" });
       } else {
-        this.recorder.start()
-        chrome.browserAction.setIcon({ path: './images/icon-green.png' })
+        await this.recorder.start();
+        chrome.browserAction.setIcon({ path: "./images/icon-pending.png" });
       }
-      this.isRunning = !this.isRunning
-    })
+      this.isRunning = !this.isRunning;
+    });
   }
 }
