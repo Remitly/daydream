@@ -2,20 +2,6 @@
 
 A chrome extension to record your actions into a [Puppeteer](https://github.com/GoogleChrome/puppeteer) script.
 
-## Example
-
-![Demo](https://cldup.com/jSPoteXKJS.png)
-
-## Installing
-
-### Google Chrome
-
-You can download Daydream from the Chrome Web Store [here](https://chrome.google.com/webstore/detail/daydream/oajnmbophdhdobfpalhkfgahchpcoali).
-
-### Opera
-
-First enable Opera to install Chrome extensions [here](https://addons.opera.com/extensions/details/download-chrome-extension-9/); then you can download Daydream from the Chrome Web Store [here](https://chrome.google.com/webstore/detail/daydream/oajnmbophdhdobfpalhkfgahchpcoali).
-
 ## Developing
 
 1. Run `$ git clone https://github.com/segmentio/daydream.git && cd daydream && make`
