@@ -2377,7 +2377,7 @@ is-plain-obj@^1.0.0, is-plain-obj@^1.1:
 
 is-posix-bracket@^0.1.0:
   version "0.1.1"
-  resolved "http://registry.npmjs.org/is-posix-bracket/-/is-posix-bracket-0.1.1.tgz#3334dc79774368e92f016e6fbc0a88f5cd6e6bc4"
+  resolved "https://registry.npmjs.org/is-posix-bracket/-/is-posix-bracket-0.1.1.tgz#3334dc79774368e92f016e6fbc0a88f5cd6e6bc4"
 
 is-primitive@^2.0.0:
   version "2.0.0"
@@ -2576,8 +2576,8 @@ loader-utils@^1.0.2:
     json5 "^0.5.0"
 
 lodash-es@^4.17.10:
-  version "4.17.10"
-  resolved "https://npm.int.remitly.com/lodash-es/-/lodash-es-4.17.10.tgz#62cd7104cdf5dd87f235a837f0ede0e8e5117e05"
+  version "4.17.15"
+  resolved "https://registry.yarnpkg.com/lodash-es/-/lodash-es-4.17.15.tgz#21bd96839354412f23d7a10340e5eac6ee455d78"
 
 lodash._reinterpolate@~3.0.0:
   version "3.0.0"
@@ -3321,7 +3321,7 @@ postcss-loader@^1.2.1:
 
 postcss-media-minmax@^2.1.0:
   version "2.1.2"
-  resolved "http://registry.npmjs.org/postcss-media-minmax/-/postcss-media-minmax-2.1.2.tgz#444c5cf8926ab5e4fd8a2509e9297e751649cdf8"
+  resolved "https://registry.npmjs.org/postcss-media-minmax/-/postcss-media-minmax-2.1.2.tgz#444c5cf8926ab5e4fd8a2509e9297e751649cdf8"
   dependencies:
     postcss "^5.0.4"
 
