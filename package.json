@@ -25,7 +25,7 @@
     "postcss-cssnext": "^2.9.0",
     "postcss-import": "^9.0.0",
     "postcss-loader": "^1.2.1",
-    "puppeteer": "^1.6.1",
+    "puppeteer": "^1.13.0",
     "style-loader": "^0.13.1",
     "webpack": "^2.2.1"
   },
