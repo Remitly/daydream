@@ -1,0 +1,39 @@
+version: 2
+registries:
+  npm-registry-npm-int-remitly-com:
+    type: npm-registry
+    url: https://npm.int.remitly.com
+    token: "${{secrets.NPM_REGISTRY_NPM_INT_REMITLY_COM_TOKEN}}"
+
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "15:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: copy-webpack-plugin
+    versions:
+    - 4.6.0
+    - 8.0.0
+  - dependency-name: webpack
+    versions:
+    - 2.7.0
+    - 5.21.2
+    - 5.23.0
+    - 5.24.1
+  - dependency-name: lodash-es
+    versions:
+    - 4.17.20
+  - dependency-name: lodash
+    versions:
+    - 4.17.20
+  - dependency-name: elliptic
+    versions:
+    - 6.5.3
+  - dependency-name: url-parse
+    versions:
+    - 1.4.7
+  registries:
+  - npm-registry-npm-int-remitly-com
