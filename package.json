@@ -27,7 +27,7 @@
     "postcss-loader": "^1.2.1",
     "puppeteer": "^1.6.1",
     "style-loader": "^0.13.1",
-    "webpack": "^2.2.1"
+    "webpack": "^5.36.2"
   },
   "dependencies": {
     "@pollyjs/adapter-fetch": "^1.0.0",
